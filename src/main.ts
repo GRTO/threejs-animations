@@ -1,4 +1,5 @@
-import './style.css'
+import './style.css';
+import GUI from 'lil-gui';
 import {
 	BoxGeometry,
 	Mesh,
@@ -30,7 +31,7 @@ const createSphere = () => {
 }
 
 const createPlace = () => {
-	const planeGeometry = new PlaneGeometry(5, 5);
+	const planeGeometry = new PlaneGeometry(15, 15);
 	const planeMaterial = new MeshStandardMaterial({ color: 0xffffff });
 	const plane = new Mesh(planeGeometry, planeMaterial);
 	plane.rotation.x = - Math.PI / 2;
@@ -48,6 +49,7 @@ const createLight = () => {
 }
 
 // ----------------------------------------------------------------------------
+const gui = new GUI();
 
 const scene = new Scene();
 
@@ -72,8 +74,17 @@ scene.add(plane);
 const light = createLight();
 scene.add(light);
 
-let rotationSpeed = 0.01;
 let delta = 0.1;
+
+const state = {
+    cubeRotationSpeed: 0.01,
+	sphereRotationSpeed: 0.03,
+    sphereRotationRadius: 3,
+};
+
+gui.add(state, 'cubeRotationSpeed', 0, 0.1).name("Cube Speed Rotation");
+gui.add(state, 'sphereRotationSpeed', 0, 0.1).name("Sphere Speed Rotation");
+gui.add(state, 'sphereRotationRadius', 2, 5).name("Sphere Radius Rotation");
 
 // Camera orbits
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -84,12 +95,12 @@ function animate() {
 	controls.update();
 
     // Rotate the cube
-    cube.rotation.x += rotationSpeed;
-    cube.rotation.y += rotationSpeed;
+    cube.rotation.x += state.cubeRotationSpeed;
+    cube.rotation.y += state.cubeRotationSpeed;
 
-	sphere.position.z = 3 * Math.sin(delta);
-	sphere.position.x = 3 * Math.cos(delta);
-	delta+=0.03;
+	sphere.position.z = state.sphereRotationRadius * Math.sin(delta);
+	sphere.position.x = state.sphereRotationRadius * Math.cos(delta);
+	delta+=state.sphereRotationSpeed;
 
     // Render the scene from the perspective of the camera
     renderer.render(scene, camera);
