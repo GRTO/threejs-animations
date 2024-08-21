@@ -2,41 +2,55 @@ import './style.css';
 import GUI from 'lil-gui';
 import {
 	BoxGeometry,
+	Color,
 	Mesh,
 	MeshStandardMaterial,
 	PerspectiveCamera,
 	PlaneGeometry,
 	PointLight,
+	Raycaster,
 	Scene,
 	SphereGeometry,
+	Vector2,
 	WebGLRenderer,
 } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
+type MeshId = "cube" | "plane" | "sphere";
+
+const colorsMap: Record<MeshId, number> = {
+	cube: 0x2af4f2,
+	sphere: 0x1a14f2,
+	plane: 0xffffff,
+}
+
 const createCube = () => {
 	const cubeGeometry = new BoxGeometry();
-	const cubeMaterial = new MeshStandardMaterial({ color: 0x2af4f2 });
+	const cubeMaterial = new MeshStandardMaterial({ color: colorsMap.cube });
 	const cube = new Mesh(cubeGeometry, cubeMaterial);
 	cube.castShadow = true;
+	cube.name = "cube";
 	return cube;
 }
 
 const createSphere = () => {
 	const sphereGeometry = new SphereGeometry();
-	const sphereMaterial = new MeshStandardMaterial({ color: 0x1a14f2 });
+	const sphereMaterial = new MeshStandardMaterial({ color: colorsMap.sphere });
 	const sphere = new Mesh(sphereGeometry, sphereMaterial);
 	sphere.castShadow = true;
 	sphere.position.x += 2;
+	sphere.name = "sphere";
 	return sphere;
 }
 
-const createPlace = () => {
+const createPlane = () => {
 	const planeGeometry = new PlaneGeometry(15, 15);
-	const planeMaterial = new MeshStandardMaterial({ color: 0xffffff });
+	const planeMaterial = new MeshStandardMaterial({ color: colorsMap.plane });
 	const plane = new Mesh(planeGeometry, planeMaterial);
 	plane.rotation.x = - Math.PI / 2;
 	plane.position.y = -1.5;
 	plane.receiveShadow = true;
+	plane.name = "plane";
 	return plane;
 }
 
@@ -45,13 +59,49 @@ const createLight = () => {
 	light.position.set(5, 5, 5);
 	
 	light.castShadow = true;
+	light.name = "pointLight";
 	return light;
 }
 
 // ----------------------------------------------------------------------------
 const gui = new GUI();
-
 const scene = new Scene();
+
+let lastIntersectedObject: MeshId | null = null;
+
+window.addEventListener('pointermove', (event) => {
+    const mouse = new Vector2();
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    
+    const raycaster = new Raycaster();
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(scene.children);
+    
+    if (intersects.length > 0) {
+		const [firstIntersect, ...nextIntersects] = intersects;
+        const intersectedObject = firstIntersect.object;
+
+        if (intersectedObject instanceof Mesh) {
+			if (lastIntersectedObject !== intersectedObject.name) {
+				lastIntersectedObject = intersectedObject.name as MeshId;
+				intersectedObject.material.color.set(0xff0000);
+			}
+        }
+
+		nextIntersects?.forEach(({ object }) => {
+			const mesh = object as Mesh<any, any>;
+			const meshId = mesh.name as MeshId;
+			mesh.material.color.set(colorsMap[meshId]);
+		});
+    } else if (lastIntersectedObject) {
+		const intersectedMesh = scene.getObjectByName(lastIntersectedObject) as Mesh<any, any>;
+		intersectedMesh.material.color.set(colorsMap[lastIntersectedObject]);
+
+        lastIntersectedObject = null;
+    }
+});
+
 
 const camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.z = 5;
@@ -67,7 +117,7 @@ scene.add(cube);
 const sphere = createSphere();
 scene.add(sphere);
 
-const plane = createPlace();
+const plane = createPlane();
 scene.add(plane);
 
 
