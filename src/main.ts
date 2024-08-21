@@ -68,37 +68,51 @@ const scene = new Scene();
 
 let lastIntersectedObject: MeshId | null = null;
 
+const state = {
+    cubeRotationSpeed: 0.01,
+	sphereRotationSpeed: 0.03,
+    sphereRotationRadius: 3,
+	enabledRayCasting: false,
+};
+
+gui.add(state, 'cubeRotationSpeed', 0, 0.1).name("Cube Speed Rotation");
+gui.add(state, 'sphereRotationSpeed', 0, 0.1).name("Sphere Speed Rotation");
+gui.add(state, 'sphereRotationRadius', 2, 5).name("Sphere Radius Rotation");
+gui.add(state, 'enabledRayCasting').name("Enable raycasting");
+
 window.addEventListener('pointermove', (event) => {
-    const mouse = new Vector2();
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-    
-    const raycaster = new Raycaster();
-    raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(scene.children);
-    
-    if (intersects.length > 0) {
-		const [firstIntersect, ...nextIntersects] = intersects;
-        const intersectedObject = firstIntersect.object;
-
-        if (intersectedObject instanceof Mesh) {
-			if (lastIntersectedObject !== intersectedObject.name) {
-				lastIntersectedObject = intersectedObject.name as MeshId;
-				intersectedObject.material.color.set(0xff0000);
+	if (state.enabledRayCasting) {
+		const mouse = new Vector2();
+		mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+		mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+		
+		const raycaster = new Raycaster();
+		raycaster.setFromCamera(mouse, camera);
+		const intersects = raycaster.intersectObjects(scene.children);
+		
+		if (intersects.length > 0) {
+			const [firstIntersect, ...nextIntersects] = intersects;
+			const intersectedObject = firstIntersect.object;
+	
+			if (intersectedObject instanceof Mesh) {
+				if (lastIntersectedObject !== intersectedObject.name) {
+					lastIntersectedObject = intersectedObject.name as MeshId;
+					intersectedObject.material.color.set(0xff0000);
+				}
 			}
-        }
-
-		nextIntersects?.forEach(({ object }) => {
-			const mesh = object as Mesh<any, any>;
-			const meshId = mesh.name as MeshId;
-			mesh.material.color.set(colorsMap[meshId]);
-		});
-    } else if (lastIntersectedObject) {
-		const intersectedMesh = scene.getObjectByName(lastIntersectedObject) as Mesh<any, any>;
-		intersectedMesh.material.color.set(colorsMap[lastIntersectedObject]);
-
-        lastIntersectedObject = null;
-    }
+	
+			nextIntersects?.forEach(({ object }) => {
+				const mesh = object as Mesh<any, any>;
+				const meshId = mesh.name as MeshId;
+				mesh.material.color.set(colorsMap[meshId]);
+			});
+		} else if (lastIntersectedObject) {
+			const intersectedMesh = scene.getObjectByName(lastIntersectedObject) as Mesh<any, any>;
+			intersectedMesh.material.color.set(colorsMap[lastIntersectedObject]);
+	
+			lastIntersectedObject = null;
+		}
+	}
 });
 
 
@@ -124,16 +138,6 @@ const light = createLight();
 scene.add(light);
 
 let delta = 0.1;
-
-const state = {
-    cubeRotationSpeed: 0.01,
-	sphereRotationSpeed: 0.03,
-    sphereRotationRadius: 3,
-};
-
-gui.add(state, 'cubeRotationSpeed', 0, 0.1).name("Cube Speed Rotation");
-gui.add(state, 'sphereRotationSpeed', 0, 0.1).name("Sphere Speed Rotation");
-gui.add(state, 'sphereRotationRadius', 2, 5).name("Sphere Radius Rotation");
 
 // Camera orbits
 const controls = new OrbitControls(camera, renderer.domElement);
