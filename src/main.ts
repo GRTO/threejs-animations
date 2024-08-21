@@ -2,7 +2,6 @@ import './style.css';
 import GUI from 'lil-gui';
 import {
 	BoxGeometry,
-	Color,
 	Mesh,
 	MeshStandardMaterial,
 	PerspectiveCamera,
